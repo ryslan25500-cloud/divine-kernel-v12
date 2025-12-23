@@ -1,0 +1,58 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:14-alpine
+    container_name: divine-postgres
+    environment:
+      POSTGRES_DB: divine_kernel
+      POSTGRES_USER: divine_user
+      POSTGRES_PASSWORD: 2480
+      POSTGRES_INITDB_ARGS: "-E UTF8"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backups:/backups
+    ports:
+      - "5432:5432"
+    networks:
+      - divine-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U divine_user -d divine_kernel"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  api:
+    build: .
+    container_name: divine-api
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: divine_kernel
+      DB_USER: divine_user
+      DB_PASSWORD: 2480
+      PORT: 3000
+      JWT_SECRET: divine-kernel-production-secret-key
+      API_KEYS: dk_prod_key_12345
+      CORS_ORIGIN: "*"
+    volumes:
+      - ./logs:/app/logs
+      - ./backups:/app/backups
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - divine-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  divine-network:
+    driver: bridge

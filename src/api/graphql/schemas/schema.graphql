@@ -1,0 +1,16 @@
+# 🎨 GraphQL Schema
+#
+# Определение всех типов и запросов
+
+type Query {
+  # TODO: Define GraphQL queries
+  hello: String
+}
+
+type Mutation {
+  # TODO: Define GraphQL mutations
+}
+
+type Subscription {
+  # TODO: Define GraphQL subscriptions
+}
