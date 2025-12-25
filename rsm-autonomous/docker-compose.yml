@@ -1,27 +1,20 @@
 version: '3.8'
 
 services:
-  # ═══════════════════════════════════════════════════════
-  # RSM BLOCKCHAIN NODE
-  # ═══════════════════════════════════════════════════════
   rsm-blockchain:
     build: ./blockchain
     container_name: rsm-blockchain
     ports:
-      - "8545:8545"   # RPC
-      - "8546:8546"   # WebSocket
+      - "8545:8545"
+      - "8546:8546"
     volumes:
       - rsm-chain-data:/data
     environment:
       - BLOCK_TIME=10
-      - DIFFICULTY=1
     networks:
       - rsm-network
     restart: unless-stopped
 
-  # ═══════════════════════════════════════════════════════
-  # RSM DATABASE (PostgreSQL)
-  # ═══════════════════════════════════════════════════════
   rsm-db:
     image: postgres:15-alpine
     container_name: rsm-db
@@ -38,9 +31,6 @@ services:
       - rsm-network
     restart: unless-stopped
 
-  # ═══════════════════════════════════════════════════════
-  # RSM AGI MINTER
-  # ═══════════════════════════════════════════════════════
   rsm-minter:
     build: ./minter
     container_name: rsm-minter
@@ -49,18 +39,11 @@ services:
       - rsm-db
     environment:
       - DB_HOST=rsm-db
-      - DB_PORT=5432
-      - DB_NAME=rsm_blockchain
-      - DB_USER=rsm_user
-      - DB_PASS=rsm2480
       - BLOCKCHAIN_RPC=http://rsm-blockchain:8545
     networks:
       - rsm-network
     restart: unless-stopped
 
-  # ═══════════════════════════════════════════════════════
-  # RSM API & WALLET SERVICE
-  # ═══════════════════════════════════════════════════════
   rsm-api:
     build: ./api
     container_name: rsm-api
@@ -68,9 +51,20 @@ services:
       - "3030:3030"
     depends_on:
       - rsm-blockchain
-      - rsm-db
     environment:
-      - DB_HOST=rsm-db
+      - BLOCKCHAIN_RPC=http://rsm-blockchain:8545
+    networks:
+      - rsm-network
+    restart: unless-stopped
+
+  rsm-dex:
+    build: ./dex
+    container_name: rsm-dex
+    ports:
+      - "3031:3031"
+    depends_on:
+      - rsm-blockchain
+    environment:
       - BLOCKCHAIN_RPC=http://rsm-blockchain:8545
     networks:
       - rsm-network
