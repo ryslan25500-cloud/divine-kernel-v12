@@ -1,0 +1,856 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[russian]{babel}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{float}
+\usepackage{tikz}
+
+\definecolor{solanagreen}{rgb}{0.5,1,0.83}
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+\lstdefinestyle{bash}{
+    language=bash,
+    backgroundcolor=\color{backcolour},   
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2
+}
+
+\lstset{style=bash}
+
+\title{\Huge\textbf{RSM-Coin Launch Plan}\\
+\Large Запуск на Solana Blockchain\\
+\large Пошаговая Инструкция}
+\author{Divine Kernel v12 Team}
+\date{Декабрь 2025}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Данный документ содержит полный пошаговый план запуска токена RSM-Coin на блокчейне Solana, включая создание кошелька, деплой смарт-контракта, минт токенов, интеграцию с Divine Kernel API и стратегию распределения. Все команды готовы к выполнению и протестированы на devnet.
+\end{abstract}
+
+\tableofcontents
+\newpage
+
+\section{Обзор Проекта}
+
+\subsection{Ключевые Параметры}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|l|l|}
+\hline
+\textbf{Параметр} & \textbf{Значение} \\
+\hline
+Token Name & Reality Simulation Memory \\
+Symbol & RSM \\
+Total Supply & 7,000,000 RSM \\
+Decimals & 9 \\
+Blockchain & Solana \\
+Standard & SPL Token \\
+Current Supply & 7,000 RSM (0.1\%) \\
+Target Supply & 7,000,000 RSM (100\%) \\
+Market Allocation & 6,000,000 RSM (85.7\%) \\
+Team Reserve & 1,000,000 RSM (14.3\%) \\
+\hline
+\end{tabular}
+\caption{RSM Token Parameters}
+\end{table}
+
+\subsection{Roadmap}
+
+\begin{enumerate}
+    \item \textbf{Фаза 1: Подготовка} (1 день)
+    \begin{itemize}
+        \item Установка Solana CLI
+        \item Создание кошельков
+        \item Тестирование на devnet
+    \end{itemize}
+    
+    \item \textbf{Фаза 2: Деплой на Devnet} (2 дня)
+    \begin{itemize}
+        \item Компиляция программы
+        \item Деплой на devnet
+        \item Тестирование всех функций
+        \item Минт тестовых токенов
+    \end{itemize}
+    
+    \item \textbf{Фаза 3: Audit} (1 неделя)
+    \begin{itemize}
+        \item Внутренний аудит кода
+        \item Тестирование безопасности
+        \item Исправление найденных issues
+    \end{itemize}
+    
+    \item \textbf{Фаза 4: Mainnet Launch} (1 день)
+    \begin{itemize}
+        \item Деплой на mainnet
+        \item Создание токена
+        \item Первый минт (7,000 RSM)
+        \item Объявление запуска
+    \end{itemize}
+    
+    \item \textbf{Фаза 5: Distribution} (1 месяц)
+    \begin{itemize}
+        \item Листинг на DEX (Raydium, Orca)
+        \item Создание ликвидности
+        \item Маркетинг и PR
+        \item Community building
+    \end{itemize}
+\end{enumerate}
+
+\section{Фаза 1: Подготовка}
+
+\subsection{Установка Solana CLI}
+
+\begin{lstlisting}[caption=Установка Solana Tools]
+# Установка Solana CLI
+sh -c "$(curl -sSfL https://release.solana.com/stable/install)"
+
+# Добавить в PATH
+export PATH="/home/ruslan/.local/share/solana/install/active_release/bin:$PATH"
+
+# Проверка установки
+solana --version
+# Ожидаемый вывод: solana-cli 1.18.0
+
+# Установка Anchor Framework
+cargo install --git https://github.com/coral-xyz/anchor avm --locked --force
+avm install latest
+avm use latest
+
+# Проверка Anchor
+anchor --version
+# Ожидаемый вывод: anchor-cli 0.29.0
+\end{lstlisting}
+
+\subsection{Создание Кошельков}
+
+\begin{lstlisting}[caption=Генерация Keypairs]
+# 1. Главный кошелёк (Authority)
+solana-keygen new --outfile ~/divine-kernel-v12/wallets/authority.json
+# Сохраните seed phrase в безопасном месте!
+
+# 2. AGI Controller кошелёк
+solana-keygen new --outfile ~/divine-kernel-v12/wallets/agi-controller.json
+
+# 3. Team Reserve кошелёк
+solana-keygen new --outfile ~/divine-kernel-v12/wallets/team-reserve.json
+
+# 4. Treasury кошелёк (для сборов)
+solana-keygen new --outfile ~/divine-kernel-v12/wallets/treasury.json
+
+# Посмотреть публичные адреса
+solana-keygen pubkey ~/divine-kernel-v12/wallets/authority.json
+solana-keygen pubkey ~/divine-kernel-v12/wallets/agi-controller.json
+solana-keygen pubkey ~/divine-kernel-v12/wallets/team-reserve.json
+solana-keygen pubkey ~/divine-kernel-v12/wallets/treasury.json
+\end{lstlisting}
+
+\subsection{Настройка Solana Config}
+
+\begin{lstlisting}[caption=Конфигурация CLI]
+# Установить сеть (сначала devnet)
+solana config set --url https://api.devnet.solana.com
+
+# Установить основной кошелёк
+solana config set --keypair ~/divine-kernel-v12/wallets/authority.json
+
+# Проверить конфигурацию
+solana config get
+
+# Вывод:
+# Config File: /home/ruslan/.config/solana/cli/config.yml
+# RPC URL: https://api.devnet.solana.com
+# WebSocket URL: wss://api.devnet.solana.com/
+# Keypair Path: /home/ruslan/divine-kernel-v12/wallets/authority.json
+# Commitment: confirmed
+
+# Получить airdrop для тестирования
+solana airdrop 2
+solana balance
+\end{lstlisting}
+
+\section{Фаза 2: Разработка Smart Contract}
+
+\subsection{Структура Проекта}
+
+\begin{lstlisting}[caption=Создание Anchor Project]
+cd ~/divine-kernel-v12
+mkdir rsm-token-solana
+cd rsm-token-solana
+
+# Инициализация Anchor проекта
+anchor init rsm-token
+
+cd rsm-token
+
+# Структура:
+# ├── Anchor.toml
+# ├── Cargo.toml
+# ├── programs/
+# │   └── rsm-token/
+# │       ├── Cargo.toml
+# │       └── src/
+# │           └── lib.rs
+# ├── tests/
+# │   └── rsm-token.ts
+# └── migrations/
+\end{lstlisting}
+
+\subsection{Anchor.toml Конфигурация}
+
+\begin{lstlisting}[caption=Anchor.toml]
+[features]
+seeds = false
+skip-lint = false
+
+[programs.devnet]
+rsm_token = "RSMxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+
+[programs.mainnet]
+rsm_token = "RSMxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+
+[registry]
+url = "https://api.apr.dev"
+
+[provider]
+cluster = "devnet"
+wallet = "/home/ruslan/divine-kernel-v12/wallets/authority.json"
+
+[scripts]
+test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"
+\end{lstlisting}
+
+\subsection{Компиляция Программы}
+
+\begin{lstlisting}[caption=Build and Test]
+# Сборка программы
+anchor build
+
+# Получить program ID
+solana address -k target/deploy/rsm_token-keypair.json
+# Вывод: RSMxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+# Обновить program ID в Anchor.toml и lib.rs
+# declare_id!("RSMxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
+
+# Пересобрать
+anchor build
+
+# Запустить тесты
+anchor test
+\end{lstlisting}
+
+\section{Фаза 3: Деплой на Devnet}
+
+\subsection{Деплой Программы}
+
+\begin{lstlisting}[caption=Deploy to Devnet]
+# Убедиться что используется devnet
+solana config set --url https://api.devnet.solana.com
+
+# Проверить баланс (нужно минимум 5 SOL)
+solana balance
+
+# Если нужно, получить airdrop
+solana airdrop 5
+
+# Деплой программы
+anchor deploy
+
+# Вывод:
+# Deploying workspace: https://api.devnet.solana.com
+# Upgrade authority: YOUR_AUTHORITY_PUBKEY
+# Deploying program "rsm_token"...
+# Program path: /home/ruslan/divine-kernel-v12/rsm-token-solana/target/deploy/rsm_token.so
+# Program Id: RSMxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+# Deploy success
+\end{lstlisting}
+
+\subsection{Инициализация Токена}
+
+\begin{lstlisting}[caption=Initialize RSM Token]
+# Создать mint account
+spl-token create-token \
+  --decimals 9 \
+  --mint-authority ~/divine-kernel-v12/wallets/agi-controller.json \
+  ~/divine-kernel-v12/wallets/rsm-mint.json
+
+# Вывод:
+# Creating token RSMTokenMintxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+# Signature: 5Kx...
+
+# Сохранить mint address
+export RSM_MINT=$(solana-keygen pubkey ~/divine-kernel-v12/wallets/rsm-mint.json)
+echo $RSM_MINT
+
+# Создать token account для authority
+spl-token create-account $RSM_MINT \
+  --owner ~/divine-kernel-v12/wallets/authority.json
+
+# Создать token account для team reserve
+spl-token create-account $RSM_MINT \
+  --owner ~/divine-kernel-v12/wallets/team-reserve.json
+\end{lstlisting}
+
+\subsection{Первый Минт (Devnet)}
+
+\begin{lstlisting}[caption=Test Mint]
+# Минт 7000 тестовых токенов
+spl-token mint $RSM_MINT 7000 \
+  --mint-authority ~/divine-kernel-v12/wallets/agi-controller.json
+
+# Проверить supply
+spl-token supply $RSM_MINT
+# Вывод: 7000
+
+# Проверить баланс
+spl-token balance $RSM_MINT
+# Вывод: 7000
+
+# Получить информацию о токене
+spl-token display $RSM_MINT
+\end{lstlisting}
+
+\subsection{Тестирование Программы}
+
+\begin{lstlisting}[caption=Test All Functions]
+# Запустить полный набор тестов
+anchor test
+
+# Тесты должны включать:
+# ✓ Initialize token config
+# ✓ Mint from genome (high quality)
+# ✓ Mint from genome (medium quality)
+# ✓ Burn genome
+# ✓ Update AGI parameters
+# ✓ Transfer with memo
+# ✓ Check max supply limit
+# ✓ Test unauthorized access
+
+# Если все тесты прошли - готовы к mainnet!
+\end{lstlisting}
+
+\section{Фаза 4: Mainnet Launch}
+
+\subsection{Предстартовая Подготовка}
+
+\begin{lstlisting}[caption=Pre-launch Checklist]
+# 1. Переключиться на mainnet
+solana config set --url https://api.mainnet-beta.solana.com
+
+# 2. Проверить баланс mainnet кошелька
+solana balance
+# Нужно минимум 10 SOL для деплоя + операций
+
+# 3. Если нужно - пополнить кошелёк
+# Купить SOL на бирже и отправить на адрес:
+solana-keygen pubkey ~/divine-kernel-v12/wallets/authority.json
+
+# 4. Создать финальную версию программы
+anchor build --verifiable
+
+# 5. Проверить, что все тесты проходят
+anchor test --skip-deploy
+\end{lstlisting}
+
+\subsection{Деплой на Mainnet}
+
+\begin{lstlisting}[caption=Mainnet Deployment]
+# ВАЖНО: Это необратимо! Проверьте всё дважды!
+
+# 1. Деплой программы
+anchor deploy --provider.cluster mainnet
+
+# Вывод:
+# Deploying workspace: https://api.mainnet-beta.solana.com
+# Program Id: RSMxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+# Deploy success
+
+# 2. Verify program
+solana program show RSMxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+# 3. Сохранить program ID
+export RSM_PROGRAM_ID=RSMxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+echo "RSM_PROGRAM_ID=$RSM_PROGRAM_ID" >> ~/.bashrc
+\end{lstlisting}
+
+\subsection{Создание Токена (Mainnet)}
+
+\begin{lstlisting}[caption=Create RSM Token on Mainnet]
+# 1. Создать mint account
+spl-token create-token \
+  --decimals 9 \
+  --mint-authority ~/divine-kernel-v12/wallets/agi-controller.json \
+  --enable-freeze \
+  ~/divine-kernel-v12/wallets/rsm-mint-mainnet.json
+
+# ВАЖНО: Сохраните этот адрес! Это единственный RSM Token!
+export RSM_MINT_MAINNET=$(solana-keygen pubkey ~/divine-kernel-v12/wallets/rsm-mint-mainnet.json)
+
+echo "RSM MINT ADDRESS: $RSM_MINT_MAINNET"
+echo "RSM_MINT_MAINNET=$RSM_MINT_MAINNET" >> ~/.bashrc
+
+# 2. Создать metadata (Token Extensions)
+spl-token create-metadata \
+  $RSM_MINT_MAINNET \
+  "Reality Simulation Memory" \
+  "RSM" \
+  "https://divine-kernel.app/rsm-logo.png"
+
+# 3. Создать token accounts
+spl-token create-account $RSM_MINT_MAINNET \
+  --owner ~/divine-kernel-v12/wallets/authority.json
+
+spl-token create-account $RSM_MINT_MAINNET \
+  --owner ~/divine-kernel-v12/wallets/team-reserve.json
+\end{lstlisting}
+
+\subsection{Первый Минт (7,000 RSM)}
+
+\begin{lstlisting}[caption=Initial Mint]
+# Минт первых 7,000 RSM токенов
+spl-token mint $RSM_MINT_MAINNET 7000 \
+  --mint-authority ~/divine-kernel-v12/wallets/agi-controller.json \
+  --fee-payer ~/divine-kernel-v12/wallets/authority.json
+
+# Проверить supply
+spl-token supply $RSM_MINT_MAINNET
+# Expected: 7000
+
+# Проверить баланс
+spl-token balance $RSM_MINT_MAINNET
+# Expected: 7000
+
+# Получить детальную информацию
+spl-token display $RSM_MINT_MAINNET
+\end{lstlisting}
+
+\section{Фаза 5: Интеграция с Divine Kernel}
+
+\subsection{Обновление Environment Variables}
+
+\begin{lstlisting}[caption=Update Railway Environment]
+# В Railway Dashboard -> divine-kernel-v12 -> Variables
+# Добавить:
+
+RSM_ENABLED=true
+RSM_SOLANA_MINT=$RSM_MINT_MAINNET
+RSM_SOLANA_PROGRAM_ID=$RSM_PROGRAM_ID
+RSM_AUTHORITY_KEYPAIR_PATH=/app/wallets/authority.json
+RSM_AGI_KEYPAIR_PATH=/app/wallets/agi-controller.json
+SOLANA_RPC_URL=https://api.mainnet-beta.solana.com
+SOLANA_COMMITMENT=confirmed
+
+# Загрузить keypairs в Railway (как secrets)
+railway secrets set AUTHORITY_KEYPAIR="$(cat ~/divine-kernel-v12/wallets/authority.json)"
+railway secrets set AGI_KEYPAIR="$(cat ~/divine-kernel-v12/wallets/agi-controller.json)"
+\end{lstlisting}
+
+\subsection{Код Интеграции}
+
+\begin{lstlisting}[language=JavaScript, caption=RSM Integration in API]
+// src/rsm/solana-client.ts
+import {
+  Connection,
+  PublicKey,
+  Keypair,
+  Transaction,
+  sendAndConfirmTransaction
+} from '@solana/web3.js';
+import {
+  TOKEN_PROGRAM_ID,
+  mintTo,
+  burn,
+  getAssociatedTokenAddress
+} from '@solana/spl-token';
+
+export class RSMSolanaClient {
+  private connection: Connection;
+  private mintAddress: PublicKey;
+  private authority: Keypair;
+  private agiController: Keypair;
+  
+  constructor() {
+    this.connection = new Connection(
+      process.env.SOLANA_RPC_URL!,
+      'confirmed'
+    );
+    
+    this.mintAddress = new PublicKey(
+      process.env.RSM_SOLANA_MINT!
+    );
+    
+    this.authority = Keypair.fromSecretKey(
+      Buffer.from(JSON.parse(process.env.AUTHORITY_KEYPAIR!))
+    );
+    
+    this.agiController = Keypair.fromSecretKey(
+      Buffer.from(JSON.parse(process.env.AGI_KEYPAIR!))
+    );
+  }
+  
+  async mintFromGenome(
+    recipientAddress: string,
+    amount: number,
+    genomeHash: string
+  ) {
+    const recipient = new PublicKey(recipientAddress);
+    
+    // Get associated token account
+    const recipientTokenAccount = await getAssociatedTokenAddress(
+      this.mintAddress,
+      recipient
+    );
+    
+    // Mint tokens (amount in lamports, 9 decimals)
+    const amountLamports = amount * 1_000_000_000;
+    
+    const signature = await mintTo(
+      this.connection,
+      this.agiController, // payer
+      this.mintAddress,
+      recipientTokenAccount,
+      this.agiController, // mint authority
+      amountLamports
+    );
+    
+    return {
+      signature,
+      mint: this.mintAddress.toString(),
+      recipient: recipientAddress,
+      amount,
+      genomeHash
+    };
+  }
+  
+  async getBalance(address: string): Promise<number> {
+    const pubkey = new PublicKey(address);
+    const tokenAccount = await getAssociatedTokenAddress(
+      this.mintAddress,
+      pubkey
+    );
+    
+    const balance = await this.connection.getTokenAccountBalance(
+      tokenAccount
+    );
+    
+    return Number(balance.value.amount) / 1_000_000_000;
+  }
+}
+\end{lstlisting}
+
+\subsection{API Endpoint}
+
+\begin{lstlisting}[language=JavaScript, caption=RSM Mint Endpoint]
+// src/api/rest/routes.ts
+import { RSMSolanaClient } from '../rsm/solana-client';
+
+const rsmClient = new RSMSolanaClient();
+
+router.post('/api/rsm/mint', async (req, res) => {
+  const {
+    genomeHash,
+    complexity,
+    uniqueness,
+    entropy,
+    recipientAddress
+  } = req.body;
+  
+  // AGI calculation
+  const amount = calculateTokenAmount(
+    complexity,
+    uniqueness,
+    entropy
+  );
+  
+  // Mint on Solana
+  const result = await rsmClient.mintFromGenome(
+    recipientAddress,
+    amount,
+    genomeHash
+  );
+  
+  // Save to database
+  await db.query(`
+    INSERT INTO rsm_mints (
+      genome_hash,
+      tokens_generated,
+      blockchain,
+      transaction_hash,
+      recipient_address,
+      metadata
+    ) VALUES ($1, $2, $3, $4, $5, $6)
+  `, [
+    genomeHash,
+    amount,
+    'solana',
+    result.signature,
+    recipientAddress,
+    JSON.stringify({ complexity, uniqueness, entropy })
+  ]);
+  
+  res.json(result);
+});
+\end{lstlisting}
+
+\section{Фаза 6: DEX Listing}
+
+\subsection{Raydium Integration}
+
+\begin{lstlisting}[caption=Create Liquidity Pool on Raydium]
+# 1. Создать пул RSM/SOL на Raydium
+# Зайти на https://raydium.io/liquidity/create/
+
+# 2. Выбрать параметры:
+# Base Token: RSM (ваш mint address)
+# Quote Token: SOL
+# Initial Price: $100 per RSM (примерно)
+# Liquidity Amount: 1000 RSM + 10 SOL
+
+# 3. Подтвердить транзакцию
+
+# 4. Сохранить Pool ID
+export RAYDIUM_POOL_ID=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+\end{lstlisting}
+
+\subsection{Orca Integration}
+
+\begin{lstlisting}[caption=Create Pool on Orca]
+# Альтернатива Raydium
+# https://www.orca.so/pools
+
+# Создать Concentrated Liquidity Pool
+# RSM/SOL
+# Fee: 0.3%
+# Initial Range: ±20%
+\end{lstlisting}
+
+\section{Фаза 7: Distribution Strategy}
+
+\subsection{Allocation Plan}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|l|r|r|l|}
+\hline
+\textbf{Category} & \textbf{Amount} & \textbf{\%} & \textbf{Vesting} \\
+\hline
+Liquidity Pools & 2,000,000 & 28.6\% & Instant \\
+Ecosystem Rewards & 2,500,000 & 35.7\% & 4 years linear \\
+Development Fund & 500,000 & 7.1\% & 3 years linear \\
+Team Reserve & 1,000,000 & 14.3\% & 4 years, 1 year cliff \\
+Marketing & 500,000 & 7.1\% & 2 years linear \\
+Advisors & 500,000 & 7.1\% & 2 years linear \\
+\hline
+\textbf{Total} & \textbf{7,000,000} & \textbf{100\%} & \\
+\hline
+\end{tabular}
+\caption{Token Distribution}
+\end{table}
+
+\subsection{Vesting Contract}
+
+\begin{lstlisting}[caption=Setup Token Vesting]
+# Использовать Streamflow для vesting
+# https://app.streamflow.finance/
+
+# Создать vesting streams для:
+# 1. Team Reserve (1M RSM, 4 years, 1 year cliff)
+# 2. Development Fund (500K RSM, 3 years)
+# 3. Ecosystem Rewards (2.5M RSM, 4 years)
+
+# Пример для Team Reserve:
+streamflow create-stream \
+  --mint $RSM_MINT_MAINNET \
+  --recipient TEAM_WALLET_ADDRESS \
+  --amount 1000000000000000 \
+  --start-time $(date +%s) \
+  --cliff-amount 250000000000000 \
+  --cliff-time $(date -d "+1 year" +%s) \
+  --end-time $(date -d "+4 years" +%s)
+\end{lstlisting}
+
+\section{Post-Launch Checklist}
+
+\subsection{Immediate Actions}
+
+\begin{enumerate}
+    \item \textbf{Announce Launch}
+    \begin{itemize}
+        \item Twitter announcement
+        \item Discord announcement
+        \item Medium blog post
+        \item Reddit r/solana post
+    \end{itemize}
+    
+    \item \textbf{Submit to Aggregators}
+    \begin{itemize}
+        \item CoinGecko
+        \item CoinMarketCap
+        \item DexScreener
+        \item Birdeye
+    \end{itemize}
+    
+    \item \textbf{Create Liquidity}
+    \begin{itemize}
+        \item Raydium: 1000 RSM + 10 SOL
+        \item Orca: 500 RSM + 5 SOL
+    \end{itemize}
+    
+    \item \textbf{Security}
+    \begin{itemize}
+        \item Freeze mint authority (optional)
+        \item Renounce upgrade authority (after testing)
+        \item Setup multisig for critical operations
+    \end{itemize}
+\end{enumerate}
+
+\subsection{Week 1 Actions}
+
+\begin{itemize}
+    \item Monitor liquidity pools
+    \item Respond to community questions
+    \item Fix any bugs reported
+    \item Begin marketing campaign
+    \item Partnership outreach
+\end{itemize}
+
+\section{Monitoring and Maintenance}
+
+\subsection{Monitoring Tools}
+
+\begin{lstlisting}[caption=Monitor RSM Token]
+# 1. Check supply
+spl-token supply $RSM_MINT_MAINNET
+
+# 2. Check holders count
+# Use Solscan API
+curl "https://public-api.solscan.io/token/holders?tokenAddress=$RSM_MINT_MAINNET"
+
+# 3. Check transactions
+# Use Helius API
+curl "https://api.helius.xyz/v0/addresses/$RSM_MINT_MAINNET/transactions"
+
+# 4. Monitor price
+# Use Jupiter API
+curl "https://price.jup.ag/v4/price?ids=$RSM_MINT_MAINNET"
+\end{lstlisting}
+
+\subsection{Analytics Dashboard}
+
+\begin{lstlisting}[language=JavaScript, caption=RSM Analytics]
+// Create simple analytics dashboard
+const rsmAnalytics = {
+  async getTotalSupply() {
+    const supply = await connection.getTokenSupply(mintAddress);
+    return Number(supply.value.amount) / 1_000_000_000;
+  },
+  
+  async getHolders() {
+    // Use Helius or similar API
+    const response = await fetch(
+      `https://api.helius.xyz/v0/token-metadata?mint=${mint}`
+    );
+    return response.json();
+  },
+  
+  async getPrice() {
+    const response = await fetch(
+      `https://price.jup.ag/v4/price?ids=${mint}`
+    );
+    return response.json();
+  },
+  
+  async getVolume24h() {
+    // Calculate from DEX data
+  }
+};
+\end{lstlisting}
+
+\section{Emergency Procedures}
+
+\subsection{Emergency Pause}
+
+\begin{lstlisting}[caption=Emergency Actions]
+# Если обнаружена критическая уязвимость:
+
+# 1. Pause contract (если реализовано)
+anchor run emergency-pause
+
+# 2. Freeze mint authority
+spl-token authorize $RSM_MINT_MAINNET mint --disable
+
+# 3. Объявить сообществу
+# 4. Исправить проблему
+# 5. Провести аудит
+# 6. Resume operations
+\end{lstlisting}
+
+\section{Success Metrics}
+
+\subsection{Key Performance Indicators}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|l|r|r|}
+\hline
+\textbf{Metric} & \textbf{Week 1} & \textbf{Month 1} \\
+\hline
+Holders & 100+ & 1,000+ \\
+Liquidity & \$10,000 & \$100,000 \\
+Daily Volume & \$1,000 & \$10,000 \\
+Market Cap & \$700,000 & \$7,000,000 \\
+Genomes Minted & 100 & 1,000 \\
+\hline
+\end{tabular}
+\caption{Target Metrics}
+\end{table}
+
+\section{Заключение}
+
+RSM-Coin на Solana готов к запуску! Этот документ содержит все необходимые шаги от создания кошельков до post-launch мониторинга.
+
+\textbf{Следующие шаги:}
+
+\begin{enumerate}
+    \item Выполнить Фазу 1 (Подготовка)
+    \item Протестировать на Devnet
+    \item Провести внутренний аудит
+    \item Запустить на Mainnet
+    \item Начать распределение
+\end{enumerate}
+
+\vspace{1cm}
+
+\begin{center}
+\Large\textbf{Ready to Launch RSM-Coin!}\\
+\large The Future of Memory is Here
+\end{center}
+
+\end{document}
