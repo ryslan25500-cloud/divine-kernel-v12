@@ -1,8 +1,43 @@
-node_modules
-dist
+# Private keys - NEVER PUBLISH!
+*.json
+!package.json
+!package-lock.json
+!tsconfig.json
+
+# Environment
 .env
+.env.*
+
+# Node
+node_modules/
+dist/
+
+# Database
+*.sql.gz
+*.dump
+
+# Logs
+logs/
 *.log
-logs
-temp
-backups
-.vscode
+
+# Temp
+temp/
+*.tmp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Wallets - CRITICAL!
+wallets/
+*wallet*.json
+*secret*
+*private*
+
+# Backups
+backups/
+*.tar.gz

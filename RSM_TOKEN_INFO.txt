@@ -1,0 +1,11 @@
+═══════════════════════════════════════════════════════
+RSM-COIN TOKEN INFO (DEVNET)
+═══════════════════════════════════════════════════════
+Token Mint:     62zfath9o7eeq8TgxJGkChmEiJnWVWYUhv1wKfCUtZZg
+Token Account:  3FL6ZJyrJBJEugUbqc3Bbq85iQKPziVrx4ubBWHyEuQ6
+Total Supply:   100,000,666 RSM
+Decimals:       9
+Network:        Devnet
+Owner Wallet:   JDKHxcon6ShF2qHRDo33Hqd82GafENXT9KGfsoVHXShL
+Created:        2025-12-25
+═══════════════════════════════════════════════════════
